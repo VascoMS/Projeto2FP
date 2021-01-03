@@ -107,7 +107,8 @@ def inteiro_para_peca(inteiro):
 
 
 def cria_tabuleiro():
-    return [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    return [[cria_peca(' '), cria_peca(' '), cria_peca(' ')], [cria_peca(' '), cria_peca(' '), cria_peca(' ')],
+            [cria_peca(' '), cria_peca(' '), cria_peca(' ')]]
 
 
 def cria_copia_tabuleiro(tab):
@@ -178,12 +179,18 @@ def eh_tabuleiro(tab):
            nao constituindo um tabuleiro valido.
     """
     valores_posiveis = (cria_peca('O'), cria_peca('X'), cria_peca(' '))
+    if type(tab) != list or len(tab) != 3:
+        return type(tab) == list and len(tab) == 3
+    for linha in tab:
+        if type(linha) != list or len(linha) != 3:
+            return type(linha) == list and len(linha) == 3
+        for valor in linha:
+            if type(valor) != int or valor not in valores_posiveis:
+                return type(valor) == int and valor in valores_posiveis
     n_pecas = [n_pecas_jog(tab, jog) for jog in valores_posiveis[:2]]
     dif_pecas = [abs(len([j for i in tab for j in i if j == cria_peca('X')]) - len(
         [j for i in tab for j in i if j == cria_peca('O')])) <= 1]
-    res = [type(tab) == list and len(tab) == 3] + [
-        type(linha) == list and len(linha) == 3 and type(valor) == int and valor in valores_posiveis for linha in tab
-        for valor in linha] + [len(jogadores_ganhadores(tab)) <= 1] + dif_pecas + [i <= 3 for i in n_pecas]
+    res = [len(jogadores_ganhadores(tab)) <= 1] + dif_pecas + [i <= 3 for i in n_pecas]
     return False not in res
 
 
@@ -247,12 +254,14 @@ def obter_movimento_manual(tab, jog):
             raise ValueError('obter_movimento_manual: escolha invalida')
         return cria_posicao(obter_pos_c(pos), obter_pos_l(pos)),
     mov = input('Turno do jogador. Escolha um movimento: ')
-    if mov[:2] not in pos_possiveis or mov[2:] not in pos_possiveis or \
-            (obter_peca(tab, cria_posicao(mov[:2][0], mov[:2][1])) != jog or
-             obter_peca(tab, cria_posicao(mov[2:][0], mov[2:][1])) not in (
-                     cria_peca(' '), jog)) or cria_posicao(mov[2:][0], mov[2:][1]) not in obter_posicoes_adjacentes(
-        cria_posicao(mov[:2][0], mov[:2][1])) + (cria_posicao(mov[:2][0], mov[:2][1]),) or (
-            cria_posicao(mov[2:][0], mov[2:][1]) == cria_posicao(mov[:2][0], mov[:2][1]) and not block(tab, jog)):
+    if len(mov) < 4 or mov[:2] not in pos_possiveis or mov[2:] not in pos_possiveis:
+        raise ValueError('obter_movimento_manual: escolha invalida')
+    mov_1 = cria_posicao(mov[:2][0], mov[:2][1])
+    mov_2 = cria_posicao(mov[2:][0], mov[2:][1])
+    if (obter_peca(tab, mov_1) != jog or obter_peca(tab, mov_2) not in (
+            cria_peca(' '), jog)) or mov_2 not in obter_posicoes_adjacentes(mov_1) + (mov_1,) or (
+            mov_2 == mov_1 and not block(tab, jog)) or (pecas_iguais(obter_peca(tab, mov_2), jog) and not
+    posicoes_iguais(mov_1, mov_2)):
         raise ValueError('obter_movimento_manual: escolha invalida')
     return cria_posicao(obter_pos_c(mov[:2]), obter_pos_l(mov[:2])), cria_posicao(obter_pos_c(mov[2:]),
                                                                                   obter_pos_l(mov[2:]))
@@ -327,7 +336,7 @@ def moinho(jog, dif):
     adv = inteiro_para_peca(-peca_para_inteiro(jog))
     print('Bem-vindo ao JOGO DO MOINHO. Nivel de dificuldade {}.'.format(dif))
     print(tabuleiro_para_str(tab))
-    if pecas_iguais(jog, '[O]'):
+    if pecas_iguais(jog, cria_peca('O')):
         while pecas_iguais(res, cria_peca(' ')):
             print('Turno do computador ({}):'.format(dif))
             if len(obter_posicoes_jogador(tab, adv)) < 3:
